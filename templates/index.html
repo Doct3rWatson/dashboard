@@ -7,6 +7,8 @@
 
   <!-- FullCalendar bundle (injects its own CSS in v6) -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.19/index.global.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.19/index.global.min.css">
 
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -161,8 +163,9 @@
 
       <!-- Side panel: Meal plan + To-do -->
       <div class="col-lg-3 mb-4">
+
         <div class="widget-box">
-          <h2>🍽️ Meal Plan</h2>
+          <h2>🍜 Meal Plan</h2>
           <ul class="list-group list-group-flush" id="meal-plan">
             {% for day, meal in meals.items() %}
             <li class="list-group-item bg-transparent text-light border-secondary meal-plan-item">
@@ -173,6 +176,64 @@
           </ul>
         </div>
 
+        <div class="widget-box">
+          <h2>🍽️ Grocery List</h2>
+          <ul class="list-group list-group-flush" id="grocery-list">
+            {% for item in grocery %}
+            <li class="list-group-item bg-transparent text-light border-secondary">
+              <input type="checkbox" onchange="toggleGrocery({{ loop.index0 }})" {% if item.done %}checked{% endif %}>
+              <span class="ms-2 {% if item.done %}text-decoration-line-through{% endif %}">{{ item.task }}</span>
+              <button class="btn btn-sm btn-danger float-end" onclick="deleteGrocery({{ loop.index0 }})">&times;</button>
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="input-group mt-2">
+            <input type="text" id="new-grocery" class="form-control" placeholder="New item">
+            <button class="btn btn-success" onclick="addGrocery()">Add</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right column: Weather moved here -->
+      <div class="col-lg-3 mb-4">
+        <div class="widget-box">
+          <h2>🌤️ Weather</h2>
+          <div class="input-group mb-2">
+            <input type="text" class="form-control" id="location-input" placeholder="Enter location (e.g. Boston, MA)">
+            <button class="btn btn-secondary" onclick="updateWeather()">Get Weather</button>
+          </div>
+          <div id="weather">Loading...</div>
+        </div>
+
+        <!-- World Clocks -->
+        <div class="widget-box">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="mb-0">🕰️ World Clocks</h2>
+            <div class="d-flex align-items-center gap-2">
+              <small class="opacity-75"><span id="wc-count">0</span>/5</small>
+              <div class="d-flex align-items-center">
+                <label class="form-check-label me-2" for="wc-hour-toggle">12h</label>
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" id="wc-hour-toggle">
+                </div>
+                <label class="form-check-label ms-2" for="wc-hour-toggle">24h</label>
+              </div>
+            </div>
+          </div>
+          <!-- Find timezone by location -->
+          <div class="input-group mb-2">
+            <input type="text" id="wc-location" class="form-control form-control-sm"
+                  placeholder="Type a city or place (e.g., London, Tokyo, Boston)">
+            <button class="btn btn-success btn-sm" onclick="wcAddClockFromLocation()">Add Clock</button>
+          </div>
+          <div id="wc-suggest" class="wc-suggest d-none"></div>
+          <div id="wc-msg" class="small"></div>
+          <div id="wc-list" class="mt-2"></div>
+          <div id="wc-footnote" class="mt-2 small opacity-75"></div>
+        </div>
+
+        <!-- To Do List -->
         <div class="widget-box">
           <h2>✅ To-Do List</h2>
           <ul class="list-group list-group-flush" id="todo-list">
@@ -189,46 +250,7 @@
             <button class="btn btn-success" onclick="addTodo()">Add</button>
           </div>
         </div>
-      </div>
 
-      <!-- Right column: Weather moved here -->
-      <div class="col-lg-3 mb-4">
-        <div class="widget-box">
-          <h2>🌤️ Weather</h2>
-          <div class="input-group mb-2">
-            <input type="text" class="form-control" id="location-input" placeholder="Enter location (e.g. Boston, MA)">
-            <button class="btn btn-secondary" onclick="updateWeather()">Get Weather</button>
-          </div>
-          <div id="weather">Loading...</div>
-        </div>
-        <!-- World Clocks -->
-        <div class="widget-box">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h2 class="mb-0">🕰️ World Clocks</h2>
-            <div class="d-flex align-items-center gap-2">
-              <small class="opacity-75"><span id="wc-count">0</span>/5</small>
-              <div class="d-flex align-items-center">
-                <label class="form-check-label me-2" for="wc-hour-toggle">12h</label>
-                <div class="form-check form-switch m-0">
-                  <input class="form-check-input" type="checkbox" id="wc-hour-toggle">
-                </div>
-                <label class="form-check-label ms-2" for="wc-hour-toggle">24h</label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Find timezone by location -->
-          <div class="input-group mb-2">
-            <input type="text" id="wc-location" class="form-control form-control-sm"
-                  placeholder="Type a city or place (e.g., London, Tokyo, Boston)">
-            <button class="btn btn-success btn-sm" onclick="wcAddClockFromLocation()">Add Clock</button>
-          </div>
-          <div id="wc-suggest" class="wc-suggest d-none"></div>
-          <div id="wc-msg" class="small"></div>
-
-          <div id="wc-list" class="mt-2"></div>
-          <div id="wc-footnote" class="mt-2 small opacity-75"></div>
-        </div>
       </div>
 
     </div> <!-- /row -->
@@ -265,6 +287,17 @@
     }
     function deleteTodo(index) {
       fetch('/delete_todo', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index }) }).then(() => location.reload());
+    }
+
+    function addGrocery() {
+      const task = document.getElementById('new-todo').value;
+      fetch('/add_grocery', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ task }) }).then(() => location.reload());
+    }
+    function toggleGrocery(index) {
+      fetch('/toggle_grocery', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index }) }).then(() => location.reload());
+    }
+    function deleteGrocery(index) {
+      fetch('/delete_grocery', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index }) }).then(() => location.reload());
     }
     function manualRefresh() { location.reload(); }
 
@@ -326,35 +359,150 @@
     }
 
     function wcMessage(text, ok=false){
-      const msg = document.getElementById('wc-msg');
-      if(!msg) return;
-      msg.textContent = text || '';
-      msg.className = 'small ' + (text ? (ok ? 'ok' : 'error') : '');
+    const msg = document.getElementById('wc-msg');
+    if(!msg) return;
+    msg.textContent = text || '';
+    msg.className = 'small ' + (text ? (ok ? 'ok' : 'error') : '');
+    // console mirror for debugging
+    if (text) console[(ok?'log':'warn')]('WC:', text);
     }
+
+    async function wcLookupTimezone(lat, lon) {
+    // 1) Validate coordinates early
+    const la = Number(lat), lo = Number(lon);
+    if (!Number.isFinite(la) || !Number.isFinite(lo)) {
+      console.error('wcLookupTimezone: invalid coords', { lat, lon });
+      throw new Error('Invalid coordinates for timezone lookup');
+    }
+
+    // helper to fetch JSON with clear error messages
+    async function fetchJson(url, label){
+      let res;
+      try { res = await fetch(url); }
+      catch (e) {
+        console.error(`${label} network error:`, e);
+        throw new Error(`Network error during ${label.toLowerCase()}`);
+      }
+      if (!res.ok) {
+        console.error(`${label} HTTP error:`, res.status, res.statusText, url);
+        throw new Error(`${label} failed (HTTP ${res.status})`);
+      }
+      try { return await res.json(); }
+      catch (e) {
+        console.error(`${label} JSON parse error:`, e);
+        throw new Error(`${label} parse error`);
+      }
+    }
+
+    // 2) Primary: dedicated timezone endpoint
+    const tzUrl = `https://api.open-meteo.com/v1/timezone?latitude=${la}&longitude=${lo}`;
+    try {
+      const tzData = await fetchJson(tzUrl, 'Timezone lookup');
+      if (tzData && tzData.timezone) {
+        console.log('Timezone response (primary):', tzData);
+        return tzData.timezone;
+      }
+      console.warn('Timezone endpoint returned no timezone, falling back.');
+    } catch (err) {
+      // Only log; we’ll try the fallback next
+      console.warn('Primary timezone lookup failed, falling back:', err.message);
+    }
+
+    // 3) Fallback: forecast with timezone=auto (very reliable)
+    // Request the bare minimum to keep payload small
+    const fcUrl = `https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&forecast_days=1&timezone=auto`;
+    const fcData = await fetchJson(fcUrl, 'Forecast fallback');
+    console.log('Timezone response (fallback):', fcData);
+    if (fcData && fcData.timezone) return fcData.timezone;
+
+    throw new Error('Timezone not available for this location');
+  }
+
+  async function wcAddByCoords(label, lat, lon) {
+  try {
+    const tz = await wcLookupTimezone(lat, lon);
+    const clocks = wcLoad();
+    if (clocks.length >= WC_LIMIT) { wcMessage('Limit reached (5).'); return; }
+    if (!clocks.some(c => c.tz === tz && c.label === label)) {
+      clocks.push({ label, tz });
+      wcSave(clocks);
+      wcMessage('Added!', true);
+      wcRender();
+    } else {
+      wcMessage('That clock already exists.');
+    }
+  } catch (err) {
+    console.error('Add-by-coords error:', err);
+    wcMessage(err.message || 'Could not resolve timezone.');
+  }
+}
+
 
     /** Resolve a human-entered location to an IANA timezone using Open-Meteo APIs. */
-    async function wcFindTimezone(location){
-      // 1) geocode
-      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en`);
-      if(!geoRes.ok) throw new Error('Geocoding failed');
-      const geo = await geoRes.json();
-      if(!geo || !geo.results || !geo.results.length) throw new Error('No matching location found');
-      const g = geo.results[0]; // best match
-      const lat = g.latitude, lon = g.longitude;
-      // 2) timezone lookup
-      const tzRes = await fetch(`https://api.open-meteo.com/v1/timezone?latitude=${lat}&longitude=${lon}`);
-      if(!tzRes.ok) throw new Error('Timezone lookup failed');
-      const tzData = await tzRes.json();
-      const tz = tzData && tzData.timezone;
-      if(!tz) throw new Error('Timezone not available for this location');
+  async function wcFetchSuggestions(query) {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
+  let res;
+  try {
+    res = await fetch(url);
+  } catch (e) {
+    console.error('Geocoding network error:', e);
+    return [];
+  }
+  if (!res.ok) {
+    console.error('Geocoding HTTP error:', res.status, res.statusText);
+    return [];
+  }
+  const data = await res.json().catch(e => {
+    console.error('Geocoding JSON parse error:', e);
+    return { results: [] };
+  });
+  console.log('Geocoding suggestions:', data);
+  if (!data || !data.results) return [];
+  return data.results.map(r => ({
+    name: r.name,
+    admin: r.admin1 || r.admin2 || r.admin3 || '',
+    country_code: r.country_code || '',
+    lat: r.latitude,
+    lon: r.longitude,
+    label: wcBuildLabel({
+      name: r.name,
+      admin: r.admin1 || r.admin2 || r.admin3 || '',
+      country_code: r.country_code
+    })
+  }));
+}
 
-      // label like "Paris, Île-de-France (FR)" or fallback to name
-      const region = g.admin1 || g.admin2 || '';
-      const country = g.country_code ? ` (${g.country_code})` : '';
-      const label = [g.name, region].filter(Boolean).join(', ') + country;
-
-      return { label, tz };
+// Free-text path (when user presses Enter without choosing a suggestion)
+  async function wcFindTimezone(location) {
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`;
+    let res;
+    try {
+      res = await fetch(geoUrl);
+    } catch (e) {
+      console.error('Geocoding network error:', e);
+      throw new Error('Network error during geocoding');
     }
+    if (!res.ok) {
+      console.error('Geocoding HTTP error:', res.status, res.statusText);
+      throw new Error(`Geocoding failed (HTTP ${res.status})`);
+    }
+    const geo = await res.json().catch(e => {
+      console.error('Geocoding JSON parse error:', e);
+      throw new Error('Geocoding parse error');
+    });
+    console.log('Geocoding free-text result:', geo);
+
+    if (!geo || !geo.results || !geo.results.length) {
+      throw new Error('No matching location found');
+    }
+    const g = geo.results[0];
+    const tz = await wcLookupTimezone(g.latitude, g.longitude);
+    const region = g.admin1 || g.admin2 || '';
+    const country = g.country_code ? ` (${g.country_code})` : '';
+    const label = [g.name, region].filter(Boolean).join(', ') + country;
+    return { label, tz };
+  }
+
 
     function wcRender(){
       const wrap = document.getElementById('wc-list');
@@ -380,29 +528,40 @@
     function wcTick(){ wcRender(); } // simple every-second refresh
 
     async function wcAddClockFromLocation(){
-      const input = document.getElementById('wc-location');
-      if(!input) return;
-      const query = input.value.trim();
-      if(!query) { wcMessage('Please enter a location.'); return; }
+    const input = document.getElementById('wc-location');
+    if (!input) return;
+    const query = input.value.trim();
+    if (!query) { wcMessage('Please enter a location.'); return; }
 
-      const clocks = wcLoad();
-      if(clocks.length >= WC_LIMIT){ wcMessage('Limit reached (5).'); return; }
+    const clocks = wcLoad();
+    if (clocks.length >= WC_LIMIT){ wcMessage('Limit reached (5).'); return; }
 
-      wcMessage('Looking up timezone…', true);
-      try{
-        const { label, tz } = await wcFindTimezone(query);
-        if(clocks.some(c => c.tz === tz && c.label === label)){
-          wcMessage('That clock already exists.'); return;
-        }
-        clocks.push({ label, tz });
-        wcSave(clocks);
-        input.value = '';
+    // If suggestions are showing, add the highlighted (or first) one
+    if (wcSugList && wcSugList.length) {
+      const idx = wcSugIndex >= 0 ? wcSugIndex : 0;
+      await wcAcceptSuggestion(idx);
+      return;
+    }
+
+    // Otherwise use free-text geocoding → timezone
+    wcMessage('Looking up timezone…', true);
+    try {
+      const { label, tz } = await wcFindTimezone(query);
+      if (!tz) throw new Error('Timezone not available for this location');
+      if (!wcLoad().some(c => c.tz === tz && c.label === label)) {
+        const arr = wcLoad(); arr.push({ label, tz }); wcSave(arr);
         wcMessage('Added!', true);
         wcRender();
-      }catch(err){
-        wcMessage(err.message || 'Could not find timezone for that location.');
+      } else {
+        wcMessage('That clock already exists.');
       }
+      input.value = '';
+    } catch (err) {
+      console.error('Free-text add error:', err);
+      wcMessage(err.message || 'No matching location found');
     }
+  }
+
 
     function wcDelete(index){
       const clocks = wcLoad();
@@ -426,27 +585,6 @@
       const region = rec.admin || '';
       const cc = rec.country_code ? ` (${rec.country_code})` : '';
       return [rec.name, region].filter(Boolean).join(', ') + cc;
-    }
-
-    // Fetch up to 5 suggestions from Open-Meteo Geocoding
-    async function wcFetchSuggestions(query){
-      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
-      const res = await fetch(url);
-      if(!res.ok) throw new Error('Suggestion lookup failed');
-      const data = await res.json();
-      if(!data || !data.results) return [];
-      return data.results.map(r => ({
-        name: r.name,
-        admin: r.admin1 || r.admin2 || r.admin3 || '',
-        country_code: r.country_code || '',
-        lat: r.latitude,
-        lon: r.longitude,
-        label: wcBuildLabel({
-          name: r.name,
-          admin: r.admin1 || r.admin2 || r.admin3 || '',
-          country_code: r.country_code
-        })
-      }));
     }
 
     // Render / open dropdown
@@ -498,37 +636,19 @@
 
     // Accept a suggestion → resolve timezone → add clock
     async function wcAcceptSuggestion(idx){
-      if(idx < 0 || idx >= wcSugList.length) return;
-      const s = wcSugList[idx];
-      const input = document.getElementById('wc-location');
-      if(input) input.value = s.label;
+    if (idx < 0 || idx >= wcSugList.length) return;
+    const s = wcSugList[idx];
+    console.log('Accepting suggestion:', s);
 
-      // Resolve timezone from coords (faster than re-geocoding the string)
-      try{
-        const tzRes = await fetch(`https://api.open-meteo.com/v1/timezone?latitude=${s.lat}&longitude=${s.lon}`);
-        if(!tzRes.ok) throw new Error('Timezone lookup failed');
-        const tzData = await tzRes.json();
-        const tz = tzData && tzData.timezone;
-        if(!tz) throw new Error('No timezone for that location');
+    const input = document.getElementById('wc-location');
+    if (input) input.value = s.label;
 
-        const clocks = wcLoad();
-        if(clocks.length >= WC_LIMIT){ wcMessage('Limit reached (5).'); return; }
-        const label = s.label;
-        if(!clocks.some(c=>c.tz===tz && c.label===label)){
-          clocks.push({ label, tz });
-          wcSave(clocks);
-          wcMessage('Added!', true);
-          wcRender();
-        }else{
-          wcMessage('That clock already exists.');
-        }
-      }catch(err){
-        wcMessage(err.message || 'Could not resolve timezone.');
-      }finally{
-        wcCloseSuggestions();
-        if(input) input.focus();
-      }
-    }
+    // Use the suggestion’s coords directly
+    await wcAddByCoords(s.label, s.lat, s.lon);
+
+    wcCloseSuggestions();
+    if (input) input.focus();
+  }
 
     // Key handling on input (↑/↓/Enter/Esc)
     function wcSuggestKeyDown(e){
@@ -538,6 +658,9 @@
       else if(e.key === 'Enter'){ wcAcceptSuggestion(wcSugIndex >= 0 ? wcSugIndex : 0); e.preventDefault(); }
       else if(e.key === 'Escape'){ wcCloseSuggestions(); }
     }
+
+
+
 
     document.addEventListener('DOMContentLoaded', function () {
       // Weather init
@@ -624,18 +747,28 @@
       }
 
       // Autocomplete listeners
-      const wcLoc = document.getElementById('wc-location');
-      const wcSugBox = document.getElementById('wc-suggest');
-      if (wcLoc){
-        wcLoc.addEventListener('input', wcSuggestInput);
-        wcLoc.addEventListener('keydown', wcSuggestKeyDown);
-        wcLoc.addEventListener('blur', () => setTimeout(wcCloseSuggestions, 120)); // allow click select
-      }
       // Also allow pressing Enter to add by free-text if they don’t pick a suggestion
+      const wcLoc = document.getElementById('wc-location');
       if (wcLoc){
-        wcLoc.addEventListener('keyup', (e)=>{
-          if(e.key === 'Enter' && !wcSugList.length) wcAddClockFromLocation();
+        // clear any message and debounce suggestions on input
+        wcLoc.addEventListener('input', () => { wcMessage(''); wcSuggestInput(); });
+
+        // keyboard controls: ↑/↓ to navigate, Enter to accept, Esc to close
+        wcLoc.addEventListener('keydown', (e) => {
+          if (wcSugList.length) {
+            if (e.key === 'ArrowDown') { wcSugIndex = (wcSugIndex+1) % wcSugList.length; wcRenderSuggestions(); e.preventDefault(); }
+            else if (e.key === 'ArrowUp') { wcSugIndex = (wcSugIndex-1+wcSugList.length) % wcSugList.length; wcRenderSuggestions(); e.preventDefault(); }
+            else if (e.key === 'Enter') { wcAcceptSuggestion(wcSugIndex >= 0 ? wcSugIndex : 0); e.preventDefault(); }
+            else if (e.key === 'Escape') { wcCloseSuggestions(); }
+          } else if (e.key === 'Enter') {
+            // No suggestions open → free-text path
+            wcAddClockFromLocation();
+            e.preventDefault();
+          }
         });
+
+        // Delay closing so clicks on suggestions can register first
+        wcLoc.addEventListener('blur', () => setTimeout(wcCloseSuggestions, 120));
       }
     });
   </script>

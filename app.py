@@ -23,7 +23,8 @@ def index():
     events = get_combined_calendar_events()
     meals = read_json("meals.json")
     todos = read_json("todos.json")
-    return render_template("index.html", events=events, meals=meals, todos=todos)
+    grocery = read_json("grocery.json")
+    return render_template("index.html", events=events, meals=meals, todos=todos, grocery=grocery)
 
 @app.route("/update_meals", methods=["POST"])
 def update_meals():
@@ -58,15 +59,46 @@ def delete_todo():
         write_json("todos.json", todos)
     return jsonify(todos)
 
+
+@app.route("/add_grocery", methods=["POST"])
+def add_grocery():
+    grocery = read_json("grocery.json")
+    new_task = request.json.get("task")
+    if new_task:
+        grocery.append({"task": new_task, "done": False})
+        write_json("grocery.json", grocery)
+    return jsonify(grocery)
+
+@app.route("/toggle_grocery", methods=["POST"])
+def toggle_grocery():
+    grocery = read_json("grocery.json")
+    idx = int(request.json.get("index"))
+    if 0 <= idx < len(grocery):
+        grocery[idx]["done"] = not grocery[idx]["done"]
+        write_json("grocery.json", grocery)
+    return jsonify(grocery)
+
+@app.route("/delete_grocery", methods=["POST"])
+def delete_grocery():
+    grocery = read_json("grocery.json")
+    idx = int(request.json.get("index"))
+    if 0 <= idx < len(grocery):
+        grocery.pop(idx)
+        write_json("grocery.json", grocery)
+    return jsonify(grocery)
+
 @app.route("/refresh_data")
 def refresh_data():
     events = get_combined_calendar_events()
     meals = read_json("meals.json")
     todos = read_json("todos.json")
+    grocery = read_json("grocery.json")
+
     return jsonify({
         "events": events,
         "meals": meals,
-        "todos": todos
+        "todos": todos,
+        "grocery": grocery
     })
 
 

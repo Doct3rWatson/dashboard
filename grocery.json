@@ -1,0 +1,10 @@
+[
+  {
+    "task": "Spam",
+    "done": false
+  },
+  {
+    "task": "Rice",
+    "done": true
+  }
+]
