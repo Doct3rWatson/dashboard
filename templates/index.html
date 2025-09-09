@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Smart Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FullCalendar bundle (injects its own CSS in v6) -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <style>
+    body[data-theme="dark"] { background-color: #121212; color: #f0f0f0; }
+    body[data-theme="light"] { background-color: #ffffff; color: #111111; }
+
+    .widget-box { border: 2px solid; border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; }
+    body[data-theme="dark"] .widget-box { border-color: #ffffff; }
+    body[data-theme="light"] .widget-box { border-color: #000000; }
+
+    /* Event text colors */
+    body[data-theme="dark"] .fc-event-time { color: #88CCEE !important; }
+    body[data-theme="dark"] .fc-event-title { color: #FFFFFF !important; }
+    body[data-theme="light"] .fc-event-time { color: #3366BB !important; }
+    body[data-theme="light"] .fc-event-title { color: #000000 !important; }
+
+    body[data-theme="light"] .text-light { color: #111 !important; }
+
+    h2 { margin-top: 1.5rem; font-size: 1.25rem; border-bottom: 1px solid #333; padding-bottom: 0.25rem; }
+
+    /* Sizes for calendars */
+    #calendar-main { min-height: 620px; }
+    .mini-cal .fc { font-size: 0.85rem; }
+    .mini-cal .fc .fc-toolbar { display: none; }
+    .mini-cal .fc-daygrid-day-number { font-size: 0.9rem; }
+    .mini-cal .fc-daygrid-event { font-size: 0.75rem; }
+    .mini-cal { min-height: 320px; }
+    /* Mini calendar month titles */
+    .mini-month-title {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      padding-bottom: 2px; /* space for underline */
+      border-bottom: 1px solid transparent; /* placeholder for theme underline */
+      padding-top: 2px; /* space for underline */
+      border-top: 1px solid transparent; /* placeholder for theme underline */
+    }
+
+    /* Theme-aware colors and underline */
+    body[data-theme="dark"] .mini-month-title {
+      color: #f0f0f0;
+      border-color: rgba(240, 240, 240, 0.3); /* subtle light underline */
+    }
+
+    body[data-theme="light"] .mini-month-title {
+      color: #111111;
+      border-color: rgba(17, 17, 17, 0.3); /* subtle dark underline */
+    }
+    .meal-plan-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem; /* spacing between label and input */
+    }
+
+    .meal-plan-item strong {
+      white-space: nowrap; /* prevents wrapping of the day name */
+    }
+
+    .meal-plan-item input {
+      flex: 1; /* allows the input to fill remaining space */
+      min-width: 120px; /* prevents it from being too small */
+    }
+    /* World clocks list */
+    #wc-list .wc-row{
+      display:flex;justify-content:space-between;align-items:baseline;
+      padding:0.25rem 0;border-bottom:1px dashed rgba(127,127,127,0.3);
+    }
+    #wc-list .wc-row:last-child{border-bottom:none;}
+    .wc-label{font-weight:600;}
+    .wc-time{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;}
+    .wc-date{opacity:0.85;font-size:0.9rem;}
+    body[data-theme="light"] #wc-list .wc-row{border-color:rgba(0,0,0,0.2);}
+    body[data-theme="dark"]  #wc-list .wc-row{border-color:rgba(255,255,255,0.2);}
+
+    /* messages */
+    #wc-msg.error { color: #dc3545; }   /* bootstrap danger-ish */
+    #wc-msg.ok    { color: #198754; }   /* bootstrap success-ish */
+    /* Autocomplete dropdown */
+    .wc-suggest {
+      position: relative; /* container positioning */
+    }
+    .wc-suggest.open { z-index: 1000; }
+
+    /* The actual list */
+    .wc-suggest-list {
+      position: absolute; top: -6px; /* snug under input group */
+      width: 100%; transform: translateY(100%);
+      border: 1px solid;
+      border-radius: .375rem;
+      overflow: hidden;
+      max-height: 260px; overflow-y: auto;
+      box-shadow: 0 6px 16px rgba(0,0,0,.2);
+    }
+
+    body[data-theme="dark"] .wc-suggest-list {
+      background: #1e1e1e;
+      border-color: rgba(255,255,255,0.25);
+    }
+    body[data-theme="light"] .wc-suggest-list {
+      background: #fff;
+      border-color: rgba(0,0,0,0.2);
+    }
+
+    .wc-sug-item {
+      padding: .5rem .75rem; cursor: pointer;
+      display: flex; justify-content: space-between; gap: .5rem;
+    }
+    .wc-sug-item:hover, .wc-sug-item.active {
+      background: rgba(127,127,127,0.15);
+    }
+    .wc-sug-name { font-weight: 600; }
+    .wc-sug-meta { opacity: .75; font-size: .9rem; }
+    .d-none { display: none !important; }
+
+  </style>
+</head>
+<body class="p-4" data-theme="dark">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1>📅 Smart Calendar</h1>
+      <div>
+        <button class="btn btn-outline-light me-2 theme-button" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+        <button class="btn btn-outline-light theme-button" onclick="manualRefresh()">Refresh</button>
+      </div>
+    </div>
+
+    <!-- KEEP EVERYTHING INSIDE THIS .row -->
+    <div class="row">
+      <!-- Main calendar column -->
+      <div class="col-lg-6 mb-4">
+        <div class="widget-box">
+          <!-- Main month -->
+          <div id="calendar-main"></div>
+
+          <!-- Mini months (underneath main) -->
+          <div class="mini-cal-wrapper mt-3">
+            <div class="mb-3">
+              <h3 id="month-next1" class="mini-month-title"></h3>
+              <div id="calendar-next1" class="mini-cal"></div>
+            </div>
+            <div>
+              <h3 id="month-next2" class="mini-month-title"></h3>
+              <div id="calendar-next2" class="mini-cal"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side panel: Meal plan + To-do -->
+      <div class="col-lg-3 mb-4">
+        <div class="widget-box">
+          <h2>🍽️ Meal Plan</h2>
+          <ul class="list-group list-group-flush" id="meal-plan">
+            {% for day, meal in meals.items() %}
+            <li class="list-group-item bg-transparent text-light border-secondary meal-plan-item">
+              <strong>{{ day }}:</strong>
+              <input type="text" class="form-control form-control-sm" value="{{ meal }}" onchange="updateMeal('{{ day }}', this.value)">
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="widget-box">
+          <h2>✅ To-Do List</h2>
+          <ul class="list-group list-group-flush" id="todo-list">
+            {% for item in todos %}
+            <li class="list-group-item bg-transparent text-light border-secondary">
+              <input type="checkbox" onchange="toggleTodo({{ loop.index0 }})" {% if item.done %}checked{% endif %}>
+              <span class="ms-2 {% if item.done %}text-decoration-line-through{% endif %}">{{ item.task }}</span>
+              <button class="btn btn-sm btn-danger float-end" onclick="deleteTodo({{ loop.index0 }})">&times;</button>
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="input-group mt-2">
+            <input type="text" id="new-todo" class="form-control" placeholder="New task">
+            <button class="btn btn-success" onclick="addTodo()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column: Weather moved here -->
+      <div class="col-lg-3 mb-4">
+        <div class="widget-box">
+          <h2>🌤️ Weather</h2>
+          <div class="input-group mb-2">
+            <input type="text" class="form-control" id="location-input" placeholder="Enter location (e.g. Boston, MA)">
+            <button class="btn btn-secondary" onclick="updateWeather()">Get Weather</button>
+          </div>
+          <div id="weather">Loading...</div>
+        </div>
+        <!-- World Clocks -->
+        <div class="widget-box">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="mb-0">🕰️ World Clocks</h2>
+            <div class="d-flex align-items-center gap-2">
+              <small class="opacity-75"><span id="wc-count">0</span>/5</small>
+              <div class="d-flex align-items-center">
+                <label class="form-check-label me-2" for="wc-hour-toggle">12h</label>
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" id="wc-hour-toggle">
+                </div>
+                <label class="form-check-label ms-2" for="wc-hour-toggle">24h</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Find timezone by location -->
+          <div class="input-group mb-2">
+            <input type="text" id="wc-location" class="form-control form-control-sm"
+                  placeholder="Type a city or place (e.g., London, Tokyo, Boston)">
+            <button class="btn btn-success btn-sm" onclick="wcAddClockFromLocation()">Add Clock</button>
+          </div>
+          <div id="wc-suggest" class="wc-suggest d-none"></div>
+          <div id="wc-msg" class="small"></div>
+
+          <div id="wc-list" class="mt-2"></div>
+          <div id="wc-footnote" class="mt-2 small opacity-75"></div>
+        </div>
+      </div>
+
+    </div> <!-- /row -->
+  </div> <!-- /container-fluid -->
+
+  <script>
+    // Provide EVENTS from Flask (prevents ReferenceError)
+    const EVENTS = {{ (events or []) | tojson | safe }};
+
+    let isDark = true;
+    function toggleDarkMode() {
+      isDark = !isDark;
+      document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      document.querySelectorAll('.theme-button').forEach(btn => {
+        btn.classList.toggle('btn-outline-light', isDark);
+        btn.classList.toggle('btn-outline-dark', !isDark);
+      });
+    }
+    function updateMeal(day, meal) {
+      const items = document.querySelectorAll('#meal-plan input');
+      let data = {};
+      items.forEach((el) => {
+        const dayLabel = el.parentElement.querySelector('strong').innerText.replace(':', '');
+        data[dayLabel] = el.value;
+      });
+      fetch('/update_meals', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+    }
+    function addTodo() {
+      const task = document.getElementById('new-todo').value;
+      fetch('/add_todo', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ task }) }).then(() => location.reload());
+    }
+    function toggleTodo(index) {
+      fetch('/toggle_todo', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index }) }).then(() => location.reload());
+    }
+    function deleteTodo(index) {
+      fetch('/delete_todo', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index }) }).then(() => location.reload());
+    }
+    function manualRefresh() { location.reload(); }
+
+    // WEATHER
+    const defaultLocation = 'Boston, MA';
+    async function getCoordsFromLocation(location) {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`);
+      const data = await res.json();
+      if (data && data.results && data.results.length > 0) {
+        const loc = data.results[0];
+        return { lat: loc.latitude, lon: loc.longitude, name: `${loc.name}, ${loc.admin1 || ''}` };
+      }
+      throw new Error("No matching location found");
+    }
+    async function fetchWeather(locationName) {
+      try {
+        const { lat, lon, name } = await getCoordsFromLocation(locationName);
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=fahrenheit`);
+        const data = await res.json();
+        const w = data.current_weather;
+        document.getElementById('weather').innerHTML = `<strong>${name}</strong><br>Temp: ${w.temperature}°F<br>Wind: ${w.windspeed} mph`;
+        localStorage.setItem('lastWeatherLocation', locationName);
+      } catch (err) {
+        document.getElementById('weather').innerHTML = `<span class="text-danger">Location not found. Try "Boston" or "Chicago".</span>`;
+      }
+    }
+    function updateWeather() {
+      const loc = document.getElementById('location-input').value.trim();
+      if (loc.length > 1) fetchWeather(loc);
+    }
+
+    /* ===== WORLD CLOCKS (location → IANA timezone) ===== */
+    const WC_KEY = 'worldClocks_v2';
+    const WC_LIMIT = 5;
+    const WC_HOUR_KEY = 'worldClocksHourFormat'; // '12' or '24'
+
+    function wcLoad(){
+      try{ const arr = JSON.parse(localStorage.getItem(WC_KEY) || '[]'); return Array.isArray(arr)?arr:[]; }
+      catch{ return []; }
+    }
+    function wcSave(arr){ localStorage.setItem(WC_KEY, JSON.stringify(arr)); }
+    function wcSetCount(n){ const el=document.getElementById('wc-count'); if(el) el.textContent = n; }
+
+    function wcGetHourFormat(){ return localStorage.getItem(WC_HOUR_KEY) === '24' ? '24' : '12'; }
+    function wcSetHourFormat(fmt){ localStorage.setItem(WC_HOUR_KEY, fmt === '24' ? '24' : '12'); }
+
+    function wcFmtTime(tz){
+      try{
+        const hour12 = wcGetHourFormat() !== '24';
+        return new Intl.DateTimeFormat('en-US',{
+          hour:'2-digit',minute:'2-digit',second:'2-digit',hour12,timeZone:tz
+        }).format(new Date());
+      }catch{ return '—:—:—'; }
+    }
+    function wcFmtDate(tz){
+      try{
+        return new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'2-digit',timeZone:tz}).format(new Date());
+      }catch{ return 'Invalid TZ'; }
+    }
+
+    function wcMessage(text, ok=false){
+      const msg = document.getElementById('wc-msg');
+      if(!msg) return;
+      msg.textContent = text || '';
+      msg.className = 'small ' + (text ? (ok ? 'ok' : 'error') : '');
+    }
+
+    /** Resolve a human-entered location to an IANA timezone using Open-Meteo APIs. */
+    async function wcFindTimezone(location){
+      // 1) geocode
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en`);
+      if(!geoRes.ok) throw new Error('Geocoding failed');
+      const geo = await geoRes.json();
+      if(!geo || !geo.results || !geo.results.length) throw new Error('No matching location found');
+      const g = geo.results[0]; // best match
+      const lat = g.latitude, lon = g.longitude;
+      // 2) timezone lookup
+      const tzRes = await fetch(`https://api.open-meteo.com/v1/timezone?latitude=${lat}&longitude=${lon}`);
+      if(!tzRes.ok) throw new Error('Timezone lookup failed');
+      const tzData = await tzRes.json();
+      const tz = tzData && tzData.timezone;
+      if(!tz) throw new Error('Timezone not available for this location');
+
+      // label like "Paris, Île-de-France (FR)" or fallback to name
+      const region = g.admin1 || g.admin2 || '';
+      const country = g.country_code ? ` (${g.country_code})` : '';
+      const label = [g.name, region].filter(Boolean).join(', ') + country;
+
+      return { label, tz };
+    }
+
+    function wcRender(){
+      const wrap = document.getElementById('wc-list');
+      const foot = document.getElementById('wc-footnote');
+      if(!wrap) return;
+      const clocks = wcLoad();
+      wcSetCount(clocks.length);
+      wrap.innerHTML = clocks.map((c,idx)=>`
+        <div class="wc-row">
+          <div>
+            <div class="wc-label">${c.label}</div>
+            <div class="wc-date">${wcFmtDate(c.tz)}</div>
+          </div>
+          <div class="d-flex align-items-baseline gap-3">
+            <div class="wc-time">${wcFmtTime(c.tz)}</div>
+            <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="wcDelete(${idx})">✕</button>
+          </div>
+        </div>
+      `).join('') || '<div class="small opacity-75">No clocks yet. Add up to 5.</div>';
+      if (foot) foot.textContent = clocks.length >= WC_LIMIT ? 'Limit reached (5).' : '';
+    }
+
+    function wcTick(){ wcRender(); } // simple every-second refresh
+
+    async function wcAddClockFromLocation(){
+      const input = document.getElementById('wc-location');
+      if(!input) return;
+      const query = input.value.trim();
+      if(!query) { wcMessage('Please enter a location.'); return; }
+
+      const clocks = wcLoad();
+      if(clocks.length >= WC_LIMIT){ wcMessage('Limit reached (5).'); return; }
+
+      wcMessage('Looking up timezone…', true);
+      try{
+        const { label, tz } = await wcFindTimezone(query);
+        if(clocks.some(c => c.tz === tz && c.label === label)){
+          wcMessage('That clock already exists.'); return;
+        }
+        clocks.push({ label, tz });
+        wcSave(clocks);
+        input.value = '';
+        wcMessage('Added!', true);
+        wcRender();
+      }catch(err){
+        wcMessage(err.message || 'Could not find timezone for that location.');
+      }
+    }
+
+    function wcDelete(index){
+      const clocks = wcLoad();
+      if(index >= 0 && index < clocks.length){
+        clocks.splice(index,1);
+        wcSave(clocks);
+        wcRender();
+      }
+    }
+    // ===== Autocomplete for World Clocks =====
+    let wcSugList = [];       // current suggestions [{label, name, admin, country_code, lat, lon}]
+    let wcSugIndex = -1;      // keyboard active index
+
+    // Debounce helper to avoid spamming API
+    function wcDebounce(fn, ms=250){
+      let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
+    }
+
+    // Build a nice display label
+    function wcBuildLabel(rec){
+      const region = rec.admin || '';
+      const cc = rec.country_code ? ` (${rec.country_code})` : '';
+      return [rec.name, region].filter(Boolean).join(', ') + cc;
+    }
+
+    // Fetch up to 5 suggestions from Open-Meteo Geocoding
+    async function wcFetchSuggestions(query){
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('Suggestion lookup failed');
+      const data = await res.json();
+      if(!data || !data.results) return [];
+      return data.results.map(r => ({
+        name: r.name,
+        admin: r.admin1 || r.admin2 || r.admin3 || '',
+        country_code: r.country_code || '',
+        lat: r.latitude,
+        lon: r.longitude,
+        label: wcBuildLabel({
+          name: r.name,
+          admin: r.admin1 || r.admin2 || r.admin3 || '',
+          country_code: r.country_code
+        })
+      }));
+    }
+
+    // Render / open dropdown
+    function wcRenderSuggestions(){
+      const box = document.getElementById('wc-suggest');
+      if(!box) return;
+      if(!wcSugList.length){
+        box.classList.add('d-none'); box.classList.remove('open');
+        box.innerHTML = ''; wcSugIndex = -1; return;
+      }
+      const items = wcSugList.map((s, i) => `
+        <div class="wc-sug-item ${i===wcSugIndex?'active':''}" data-idx="${i}">
+          <span class="wc-sug-name">${s.name}</span>
+          <span class="wc-sug-meta">${s.admin ? s.admin + ' · ' : ''}${s.country_code}</span>
+        </div>
+      `).join('');
+      box.innerHTML = `<div class="wc-suggest-list">${items}</div>`;
+      box.classList.remove('d-none'); box.classList.add('open');
+
+      // Click handlers
+      box.querySelectorAll('.wc-sug-item').forEach(el=>{
+        el.addEventListener('mousedown', (e)=>{ // mousedown so blur on input doesn’t kill it first
+          const idx = Number(el.getAttribute('data-idx'));
+          wcAcceptSuggestion(idx);
+          e.preventDefault();
+        });
+      });
+    }
+
+    function wcCloseSuggestions(){
+      wcSugList = []; wcSugIndex = -1;
+      wcRenderSuggestions();
+    }
+
+    const wcSuggestInput = wcDebounce(async function(){
+      const input = document.getElementById('wc-location');
+      if(!input) return;
+      const q = input.value.trim();
+      if(q.length < 2){ wcCloseSuggestions(); return; }
+      try{
+        wcSugList = await wcFetchSuggestions(q);
+        wcSugIndex = wcSugList.length ? 0 : -1;
+        wcRenderSuggestions();
+      }catch{
+        wcSugList = []; wcSugIndex = -1;
+        wcRenderSuggestions();
+      }
+    }, 250);
+
+    // Accept a suggestion → resolve timezone → add clock
+    async function wcAcceptSuggestion(idx){
+      if(idx < 0 || idx >= wcSugList.length) return;
+      const s = wcSugList[idx];
+      const input = document.getElementById('wc-location');
+      if(input) input.value = s.label;
+
+      // Resolve timezone from coords (faster than re-geocoding the string)
+      try{
+        const tzRes = await fetch(`https://api.open-meteo.com/v1/timezone?latitude=${s.lat}&longitude=${s.lon}`);
+        if(!tzRes.ok) throw new Error('Timezone lookup failed');
+        const tzData = await tzRes.json();
+        const tz = tzData && tzData.timezone;
+        if(!tz) throw new Error('No timezone for that location');
+
+        const clocks = wcLoad();
+        if(clocks.length >= WC_LIMIT){ wcMessage('Limit reached (5).'); return; }
+        const label = s.label;
+        if(!clocks.some(c=>c.tz===tz && c.label===label)){
+          clocks.push({ label, tz });
+          wcSave(clocks);
+          wcMessage('Added!', true);
+          wcRender();
+        }else{
+          wcMessage('That clock already exists.');
+        }
+      }catch(err){
+        wcMessage(err.message || 'Could not resolve timezone.');
+      }finally{
+        wcCloseSuggestions();
+        if(input) input.focus();
+      }
+    }
+
+    // Key handling on input (↑/↓/Enter/Esc)
+    function wcSuggestKeyDown(e){
+      if(!wcSugList.length) return;
+      if(e.key === 'ArrowDown'){ wcSugIndex = (wcSugIndex+1) % wcSugList.length; wcRenderSuggestions(); e.preventDefault(); }
+      else if(e.key === 'ArrowUp'){ wcSugIndex = (wcSugIndex-1+wcSugList.length) % wcSugList.length; wcRenderSuggestions(); e.preventDefault(); }
+      else if(e.key === 'Enter'){ wcAcceptSuggestion(wcSugIndex >= 0 ? wcSugIndex : 0); e.preventDefault(); }
+      else if(e.key === 'Escape'){ wcCloseSuggestions(); }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // Weather init
+      const savedLoc = localStorage.getItem('lastWeatherLocation') || defaultLocation;
+      document.getElementById('location-input').value = savedLoc;
+      fetchWeather(savedLoc);
+
+      // --- CALENDARS: main + two minis ---
+      const EVENTS_SAFE = Array.isArray(EVENTS) ? EVENTS : [];
+      const mainEl  = document.getElementById('calendar-main');
+      const next1El = document.getElementById('calendar-next1');
+      const next2El = document.getElementById('calendar-next2');
+
+      // Helpers
+      function firstOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+      function addMonths(d, n) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
+      function updateMiniMonthTitles(baseDate) {
+        const opts = { month: 'long', year: 'numeric' };
+        document.getElementById('month-next1').textContent =
+          addMonths(baseDate, 1).toLocaleDateString(undefined, opts);
+        document.getElementById('month-next2').textContent =
+          addMonths(baseDate, 2).toLocaleDateString(undefined, opts);
+      }
+
+      const mainCal = new FullCalendar.Calendar(mainEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+        height: 'auto',
+        events: EVENTS_SAFE,
+        datesSet(info) {
+          const currentFirst = firstOfMonth(info.start);
+          next1Cal.gotoDate(addMonths(currentFirst, 1));
+          next2Cal.gotoDate(addMonths(currentFirst, 2));
+          updateMiniMonthTitles(currentFirst); // keep titles in sync
+        }
+      });
+
+      const next1Cal = new FullCalendar.Calendar(next1El, {
+        initialView: 'dayGridMonth',
+        headerToolbar: false,
+        height: 'auto',
+        fixedWeekCount: true,
+        events: EVENTS_SAFE
+      });
+
+      const next2Cal = new FullCalendar.Calendar(next2El, {
+        initialView: 'dayGridMonth',
+        headerToolbar: false,
+        height: 'auto',
+        fixedWeekCount: true,
+        events: EVENTS_SAFE
+      });
+
+      // Render
+      mainCal.render();
+      next1Cal.render();
+      next2Cal.render();
+
+      // Position minis and titles relative to main
+      const mainDate = mainCal.getDate();
+      const first = firstOfMonth(mainDate);
+      next1Cal.gotoDate(addMonths(first, 1));
+      next2Cal.gotoDate(addMonths(first, 2));
+      updateMiniMonthTitles(first);
+
+      // Optional: visible test event if none provided
+      if (EVENTS_SAFE.length === 0) {
+        const today = new Date().toISOString().slice(0,10);
+        mainCal.addEvent({ title: 'Test event', start: today });
+      }
+
+      // --- World Clocks init (existing) ---
+      wcRender();
+      setInterval(wcTick, 1000);
+
+      // 12/24h toggle (existing)
+      const wcToggle = document.getElementById('wc-hour-toggle');
+      if (wcToggle){
+        wcToggle.checked = (wcGetHourFormat() === '24');
+        wcToggle.addEventListener('change', () => {
+          wcSetHourFormat(wcToggle.checked ? '24' : '12');
+          wcRender();
+        });
+      }
+
+      // Autocomplete listeners
+      const wcLoc = document.getElementById('wc-location');
+      const wcSugBox = document.getElementById('wc-suggest');
+      if (wcLoc){
+        wcLoc.addEventListener('input', wcSuggestInput);
+        wcLoc.addEventListener('keydown', wcSuggestKeyDown);
+        wcLoc.addEventListener('blur', () => setTimeout(wcCloseSuggestions, 120)); // allow click select
+      }
+      // Also allow pressing Enter to add by free-text if they don’t pick a suggestion
+      if (wcLoc){
+        wcLoc.addEventListener('keyup', (e)=>{
+          if(e.key === 'Enter' && !wcSugList.length) wcAddClockFromLocation();
+        });
+      }
+    });
+  </script>
+</body>
+</html>

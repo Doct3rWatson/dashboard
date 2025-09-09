@@ -1,0 +1,10 @@
+[
+  {
+    "task": "Pay electric bill",
+    "done": false
+  },
+  {
+    "task": "Refill prescription",
+    "done": true
+  }
+]
