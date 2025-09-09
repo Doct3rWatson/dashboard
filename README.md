@@ -18,8 +18,8 @@ A customizable smart dashboard that displays Google Calendars, editable meal pla
 pip install -r requirements.txt
 ```
 
-2. Add your Google Calendar service account credentials as `credentials.json`
-3. Share your calendars with the service account email
+2. Add your Google Calendar service account credentials as `credentials.json` (see example in repo with user specific fields as `XXXXXX`)
+3. Share your calendars with the service account email 
 4. Run the app:
 ```bash
 python app.py
