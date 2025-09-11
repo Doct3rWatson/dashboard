@@ -7,11 +7,14 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
 # Add full calendar IDs here — these can be from different Google accounts
 CALENDAR_IDS = [
-    'courtney.watson@cfa.harvard.edu'
+    'courtney.watson@cfa.harvard.edu',
+    '939ef8c05ab042b754864cd8fc1482399e5a51449c70daae27114b36b31f9f4f@group.calendar.google.com',  
 ]
 
 CALENDAR_COLORS = {
     'courtney.watson@cfa.harvard.edu': "#B640FA",
+    '939ef8c05ab042b754864cd8fc1482399e5a51449c70daae27114b36b31f9f4f@group.calendar.google.com': "#40C4FA",
+    
 }
 
 def get_combined_calendar_events():
